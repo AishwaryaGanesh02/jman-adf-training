@@ -1,0 +1,16 @@
+{
+	"name": "DS_dim_customer_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_sql_db_training",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "prep",
+			"table": "customer_dimension"
+		}
+	}
+}

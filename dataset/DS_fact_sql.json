@@ -1,0 +1,16 @@
+{
+	"name": "DS_fact_sql",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_sql_db_training",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "prep",
+			"table": "fact"
+		}
+	}
+}

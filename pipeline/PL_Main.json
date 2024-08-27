@@ -42,6 +42,38 @@
 					},
 					"waitOnCompletion": true
 				}
+			},
+			{
+				"name": "Prepare Data",
+				"description": "Clean data and create dim and fact tables",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [
+					{
+						"activity": "Store data in DB",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_prepare_data",
+						"type": "DataFlowReference"
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
 			}
 		],
 		"folder": {

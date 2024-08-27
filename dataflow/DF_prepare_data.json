@@ -1,5 +1,5 @@
 {
-	"name": "DF_prepare_customer_data",
+	"name": "DF_prepare_data",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
@@ -21,18 +21,76 @@
 					"description": "Get order data from DB"
 				}
 			],
-			"sinks": [],
-			"transformations": [
+			"sinks": [
 				{
-					"name": "castDataType"
+					"dataset": {
+						"referenceName": "DS_dim_customer_sql",
+						"type": "DatasetReference"
+					},
+					"name": "storeCustomerDim",
+					"description": "Store dim table in DB"
 				},
+				{
+					"dataset": {
+						"referenceName": "DS_dim_order_sql",
+						"type": "DatasetReference"
+					},
+					"name": "storeOrderDim",
+					"description": "Store dim table in DB"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_fact_sql",
+						"type": "DatasetReference"
+					},
+					"name": "storeFactTable",
+					"description": "Store fact in DB"
+				}
+			],
+			"transformations": [
 				{
 					"name": "cleanCustomerData",
 					"description": "Remove Null values"
 				},
 				{
+					"name": "customerDimData",
+					"description": "Creating dimension table"
+				},
+				{
+					"name": "removeCustomerDuplicates",
+					"description": "Remove duplicate values "
+				},
+				{
+					"name": "findDuplicatesCustomer",
+					"description": "Sort based on ID and find rank"
+				},
+				{
+					"name": "castDataType",
+					"description": "Cast columns to different types"
+				},
+				{
 					"name": "cleanOrderData",
 					"description": "Remove NULL value\n"
+				},
+				{
+					"name": "findDuplicatesOrder",
+					"description": "Sort based on ID and find rank"
+				},
+				{
+					"name": "removeOrderDuplicates",
+					"description": "Remove duplicate values "
+				},
+				{
+					"name": "orderDimData",
+					"description": "Creating dimension table"
+				},
+				{
+					"name": "createUnitPrice",
+					"description": "Calculate unit price from price and quantity"
+				},
+				{
+					"name": "factData",
+					"description": "Creating Fact table"
 				}
 			],
 			"scriptLines": [
@@ -65,14 +123,7 @@
 				"     validateSchema: false,",
 				"     isolationLevel: 'READ_UNCOMMITTED',",
 				"     format: 'table') ~> orderData",
-				"orderData cast(output(",
-				"          OrderID as integer,",
-				"          Quantity as integer,",
-				"          OrderTimestamp as timestamp,",
-				"          Price as double",
-				"     ),",
-				"     errors: true) ~> castDataType",
-				"customerData derive(LastName = iif(LastName=='NULL', ' ', LastName),",
+				"customerData derive(LastName = iif(LastName=='NULL', ' ', iifNull(LastName, ' ')),",
 				"          Email = iif(Email=='NULL', 'example@email.com', iifNull(Email, 'example@email.com')),",
 				"          PhoneNumber = iif(PhoneNumber=='NULL', '999-9999', iifNull(PhoneNumber, '999-9999')),",
 				"          Address = iif(Address=='NULL', 'Unknown', iifNull(Address, 'Unknown')),",
@@ -80,7 +131,92 @@
 				"          State = iif(State=='NULL', 'Unknown', iifNull(State, 'Unknown')),",
 				"          ZipCode = iif(ZipCode=='NULL', 'Unknown', iifNull(ZipCode, 'Unknown')),",
 				"          Country = iif(Country=='NULL', 'Unknown', iifNull(Country, 'Unknown'))) ~> cleanCustomerData",
-				"castDataType derive(OrderTimestamp = iifNull(OrderTimestamp, toTimestamp('9999-01-01 00:12:00'))) ~> cleanOrderData"
+				"removeCustomerDuplicates select(mapColumn(",
+				"          CustomerID,",
+				"          FirstName,",
+				"          LastName,",
+				"          Email,",
+				"          City,",
+				"          State,",
+				"          Country",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> customerDimData",
+				"findDuplicatesCustomer filter(Rank==1) ~> removeCustomerDuplicates",
+				"cleanCustomerData window(over(CustomerID),",
+				"     asc(CustomerID, true),",
+				"     Rank = rowNumber()) ~> findDuplicatesCustomer",
+				"orderData cast(output(",
+				"          OrderID as integer,",
+				"          Quantity as integer,",
+				"          OrderTimestamp as timestamp,",
+				"          Price as double",
+				"     ),",
+				"     errors: true) ~> castDataType",
+				"removeOrderDuplicates derive(OrderTimestamp = iifNull(OrderTimestamp, toTimestamp('9999-01-01 00:12:00'))) ~> cleanOrderData",
+				"castDataType window(over(OrderID),",
+				"     asc(OrderID, true),",
+				"     Rank = rowNumber()) ~> findDuplicatesOrder",
+				"findDuplicatesOrder filter(Rank==1) ~> removeOrderDuplicates",
+				"cleanOrderData select(mapColumn(",
+				"          OrderID,",
+				"          ProductID,",
+				"          Quantity,",
+				"          Price,",
+				"          CustomerID",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> orderDimData",
+				"cleanOrderData derive({Unit Price} = Price/Quantity) ~> createUnitPrice",
+				"createUnitPrice select(mapColumn(",
+				"          OrderID,",
+				"          CustomerID,",
+				"          ProductID,",
+				"          ProductName,",
+				"          {Unit Price}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> factData",
+				"customerDimData sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 0,",
+				"     errorHandlingOption: 'stopOnFirstError',",
+				"     mapColumn(",
+				"          CustomerID,",
+				"          FirstName,",
+				"          LastName,",
+				"          Email,",
+				"          City,",
+				"          State,",
+				"          Country",
+				"     )) ~> storeCustomerDim",
+				"orderDimData sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeOrderDim",
+				"factData sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeFactTable"
 			]
 		}
 	}
