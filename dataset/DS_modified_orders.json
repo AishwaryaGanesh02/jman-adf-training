@@ -1,0 +1,17 @@
+{
+	"name": "DS_modified_orders",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_sql_db_training",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [],
+		"typeProperties": {
+			"schema": "raw",
+			"table": "modifiedorders"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

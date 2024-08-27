@@ -1,0 +1,78 @@
+{
+	"name": "DF_CalculateTotal",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_orders_sql",
+						"type": "DatasetReference"
+					},
+					"name": "ordersData",
+					"description": "Get the source dataset of orders"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeData",
+					"description": "Storing the data in database"
+				}
+			],
+			"transformations": [
+				{
+					"name": "createUnitPrice",
+					"description": "Adding column - unit price"
+				},
+				{
+					"name": "createTotalPrice",
+					"description": "Creating total price value"
+				},
+				{
+					"name": "cast1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          OrderID as string,",
+				"          ProductID as string,",
+				"          ProductName as string,",
+				"          Quantity as string,",
+				"          OrderTimestamp as string,",
+				"          Price as string,",
+				"          CustomerID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> ordersData",
+				"cast1 derive({Unit Price} = Price/Quantity) ~> createUnitPrice",
+				"createUnitPrice derive(TotalPrice = Quantity*{Unit Price}) ~> createTotalPrice",
+				"ordersData cast(output(",
+				"          Quantity as integer,",
+				"          Price as double",
+				"     ),",
+				"     errors: true) ~> cast1",
+				"createTotalPrice sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'orders',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     saveOrder: 1,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeData"
+			]
+		}
+	}
+}

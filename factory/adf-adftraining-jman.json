@@ -1,0 +1,9 @@
+{
+	"name": "adf-adftraining-jman",
+	"location": "southeastasia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "2660c16b-9135-4e9b-9eaf-bc602b70dfe2",
+		"tenantId": "2800c0a0-70e9-49be-8733-faeaa6aced99"
+	}
+}
