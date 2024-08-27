@@ -13,6 +13,54 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('factoryName'), '/PL_Dataflow_Training')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_CalculateTotal",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ordersData": {},
+									"storeData": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "AdfTraining"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-08-27T07:42:09Z"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('factoryName'), '/PL_Main')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
@@ -22,6 +70,8 @@
 						"name": "Copy and merge data",
 						"description": "Get data from blob and merge them based on filename",
 						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [],
 						"policy": {
 							"secureInput": false
@@ -40,6 +90,8 @@
 						"name": "Store data in DB",
 						"description": "From the blob, store the consolidated data in SQL database",
 						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [
 							{
 								"activity": "Copy and merge data",
@@ -65,6 +117,8 @@
 						"name": "Prepare Data",
 						"description": "Clean data and create dim and fact tables",
 						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [
 							{
 								"activity": "Store data in DB",
@@ -83,7 +137,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"dataflow": {
-								"referenceName": "DF_prepare_data",
+								"referenceName": "DF_PrepareData",
 								"type": "DataFlowReference",
 								"parameters": {},
 								"datasetParameters": {
@@ -92,6 +146,46 @@
 									"storeCustomerDim": {},
 									"storeOrderDim": {},
 									"storeFactTable": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Compute Result",
+						"description": "Create the customer - products table",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Prepare Data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_CustomerProduct",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"customerDimension": {},
+									"factTable": {},
+									"orderDimension": {},
+									"customerProducts": {}
 								}
 							},
 							"staging": {},

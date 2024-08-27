@@ -377,6 +377,8 @@
 						"name": "Copy and merge data",
 						"description": "Get data from blob and merge them based on filename",
 						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [],
 						"policy": {
 							"secureInput": false
@@ -395,6 +397,8 @@
 						"name": "Store data in DB",
 						"description": "From the blob, store the consolidated data in SQL database",
 						"type": "ExecutePipeline",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [
 							{
 								"activity": "Copy and merge data",
@@ -420,6 +424,8 @@
 						"name": "Prepare Data",
 						"description": "Clean data and create dim and fact tables",
 						"type": "ExecuteDataFlow",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
 						"dependsOn": [
 							{
 								"activity": "Store data in DB",
@@ -438,7 +444,7 @@
 						"userProperties": [],
 						"typeProperties": {
 							"dataflow": {
-								"referenceName": "DF_prepare_data",
+								"referenceName": "DF_PrepareData",
 								"type": "DataFlowReference",
 								"parameters": {},
 								"datasetParameters": {
@@ -447,6 +453,46 @@
 									"storeCustomerDim": {},
 									"storeOrderDim": {},
 									"storeFactTable": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Compute Result",
+						"description": "Create the customer - products table",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Prepare Data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_CustomerProduct",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"customerDimension": {},
+									"factTable": {},
+									"orderDimension": {},
+									"customerProducts": {}
 								}
 							},
 							"staging": {},
@@ -469,7 +515,8 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/pipelines/PL_AdfTraining_CopyData_Merge')]",
 				"[concat(variables('factoryId'), '/pipelines/PL_Adftraing_StoreData')]",
-				"[concat(variables('factoryId'), '/dataflows/DF_prepare_data')]"
+				"[concat(variables('factoryId'), '/dataflows/DF_PrepareData')]",
+				"[concat(variables('factoryId'), '/dataflows/DF_CustomerProduct')]"
 			]
 		},
 		{
@@ -1152,7 +1199,144 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/DF_prepare_data')]",
+			"name": "[concat(parameters('factoryName'), '/DF_CustomerProduct')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_dim_customer_sql",
+								"type": "DatasetReference"
+							},
+							"name": "customerDimension",
+							"description": "Get customer dimension table"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_fact_sql",
+								"type": "DatasetReference"
+							},
+							"name": "factTable",
+							"description": "Get fact table"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_dim_order_sql",
+								"type": "DatasetReference"
+							},
+							"name": "orderDimension",
+							"description": "Get order dimension table"
+						}
+					],
+					"sinks": [
+						{
+							"linkedService": {
+								"referenceName": "LS_sql_db_training",
+								"type": "LinkedServiceReference"
+							},
+							"name": "customerProducts",
+							"description": "Store result in DB"
+						}
+					],
+					"transformations": [
+						{
+							"name": "joinFactCustomer",
+							"description": "Join on Customer ID"
+						},
+						{
+							"name": "joinFactCustomerOrder",
+							"description": "Join based on order ID"
+						},
+						{
+							"name": "productsByCustomer",
+							"description": "Get the products ordered by customer"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          CustomerID as string,",
+						"          FirstName as string,",
+						"          LastName as string,",
+						"          Email as string,",
+						"          City as string,",
+						"          State as string,",
+						"          Country as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> customerDimension",
+						"source(output(",
+						"          OrderID as integer,",
+						"          CustomerID as string,",
+						"          ProductID as string,",
+						"          ProductName as string,",
+						"          {Unit Price} as double",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> factTable",
+						"source(output(",
+						"          OrderID as integer,",
+						"          ProductID as string,",
+						"          Quantity as integer,",
+						"          Price as double,",
+						"          CustomerID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> orderDimension",
+						"factTable, customerDimension join(factTable@CustomerID == customerDimension@CustomerID,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> joinFactCustomer",
+						"joinFactCustomer, orderDimension join(factTable@OrderID == orderDimension@OrderID,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> joinFactCustomerOrder",
+						"joinFactCustomerOrder select(mapColumn(",
+						"          ProductName,",
+						"          {Unit Price},",
+						"          Email,",
+						"          City,",
+						"          Country,",
+						"          Quantity,",
+						"          Price",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> productsByCustomer",
+						"productsByCustomer sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'table',",
+						"     store: 'sqlserver',",
+						"     schemaName: 'dbo',",
+						"     tableName: 'CustomerProduct',",
+						"     insertable: true,",
+						"     updateable: false,",
+						"     deletable: false,",
+						"     upsertable: false,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> customerProducts"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_dim_customer_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_fact_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_dim_order_sql')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_PrepareData')]",
 			"type": "Microsoft.DataFactory/factories/dataflows",
 			"apiVersion": "2018-06-01",
 			"properties": {
