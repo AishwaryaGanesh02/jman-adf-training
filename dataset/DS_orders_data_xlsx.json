@@ -1,5 +1,5 @@
 {
-	"name": "BL_orders_data",
+	"name": "DS_orders_data_xlsx",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "LS_blobstorage_training",
@@ -11,8 +11,7 @@
 			"sheetName": "Sheet1",
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"folderPath": "input",
-				"container": "ct-clientdata"
+				"container": "input"
 			},
 			"firstRowAsHeader": true
 		},

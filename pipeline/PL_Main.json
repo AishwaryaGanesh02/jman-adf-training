@@ -1,0 +1,52 @@
+{
+	"name": "PL_Main",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy and merge data",
+				"description": "Get data from blob and merge them based on filename",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_AdfTraining_CopyData_Merge",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			},
+			{
+				"name": "Store data in DB",
+				"description": "From the blob, store the consolidated data in SQL database",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Copy and merge data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_Adftraing_StoreData",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true
+				}
+			}
+		],
+		"folder": {
+			"name": "AdfAssessment"
+		},
+		"annotations": []
+	}
+}

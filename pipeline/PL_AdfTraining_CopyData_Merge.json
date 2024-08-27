@@ -1,9 +1,10 @@
 {
-	"name": "PL_AdfTraining_CopyData",
+	"name": "PL_AdfTraining_CopyData_Merge",
 	"properties": {
 		"activities": [
 			{
 				"name": "Copy customer data",
+				"description": "Copy data and merge",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -51,19 +52,20 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "BL_client_data",
+						"referenceName": "DS_customer_data_csv",
 						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "BL_consolidated_data_customers",
+						"referenceName": "DS_consolidated_customers_csv",
 						"type": "DatasetReference"
 					}
 				]
 			},
 			{
 				"name": "Copy order data",
+				"description": "Copy data and merge",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {
@@ -108,13 +110,13 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "BL_orders_data",
+						"referenceName": "DS_orders_data_xlsx",
 						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "BL_consolidated_data_orders",
+						"referenceName": "DS_consolidated_orders_csv",
 						"type": "DatasetReference"
 					}
 				]

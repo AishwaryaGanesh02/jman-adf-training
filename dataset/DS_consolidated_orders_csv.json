@@ -1,5 +1,5 @@
 {
-	"name": "BL_consolidated_data_orders",
+	"name": "DS_consolidated_orders_csv",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "LS_blobstorage_training",
@@ -12,7 +12,7 @@
 				"type": "AzureBlobStorageLocation",
 				"fileName": "orders_consolidated.csv",
 				"folderPath": "order",
-				"container": "consolidated-container"
+				"container": "consolidated-folder"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",

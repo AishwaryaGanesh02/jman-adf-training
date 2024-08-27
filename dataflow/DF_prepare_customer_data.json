@@ -1,0 +1,87 @@
+{
+	"name": "DF_prepare_customer_data",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_customer_sql",
+						"type": "DatasetReference"
+					},
+					"name": "customerData",
+					"description": "Get customer data from DB"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_orders_sql",
+						"type": "DatasetReference"
+					},
+					"name": "orderData",
+					"description": "Get order data from DB"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "castDataType"
+				},
+				{
+					"name": "cleanCustomerData",
+					"description": "Remove Null values"
+				},
+				{
+					"name": "cleanOrderData",
+					"description": "Remove NULL value\n"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as string,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Email as string,",
+				"          PhoneNumber as string,",
+				"          Address as string,",
+				"          City as string,",
+				"          State as string,",
+				"          ZipCode as string,",
+				"          Country as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> customerData",
+				"source(output(",
+				"          OrderID as string,",
+				"          ProductID as string,",
+				"          ProductName as string,",
+				"          Quantity as string,",
+				"          OrderTimestamp as string,",
+				"          Price as string,",
+				"          CustomerID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> orderData",
+				"orderData cast(output(",
+				"          OrderID as integer,",
+				"          Quantity as integer,",
+				"          OrderTimestamp as timestamp,",
+				"          Price as double",
+				"     ),",
+				"     errors: true) ~> castDataType",
+				"customerData derive(LastName = iif(LastName=='NULL', ' ', LastName),",
+				"          Email = iif(Email=='NULL', 'example@email.com', iifNull(Email, 'example@email.com')),",
+				"          PhoneNumber = iif(PhoneNumber=='NULL', '999-9999', iifNull(PhoneNumber, '999-9999')),",
+				"          Address = iif(Address=='NULL', 'Unknown', iifNull(Address, 'Unknown')),",
+				"          City = iif(City=='NULL', 'Unknown', iifNull(City, 'Unknown')),",
+				"          State = iif(State=='NULL', 'Unknown', iifNull(State, 'Unknown')),",
+				"          ZipCode = iif(ZipCode=='NULL', 'Unknown', iifNull(ZipCode, 'Unknown')),",
+				"          Country = iif(Country=='NULL', 'Unknown', iifNull(Country, 'Unknown'))) ~> cleanCustomerData",
+				"castDataType derive(OrderTimestamp = iifNull(OrderTimestamp, toTimestamp('9999-01-01 00:12:00'))) ~> cleanOrderData"
+			]
+		}
+	}
+}

@@ -16,7 +16,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"dataset": {
-						"referenceName": "BL_client_data",
+						"referenceName": "DS_customer_data_csv",
 						"type": "DatasetReference"
 					},
 					"fieldList": [
@@ -136,13 +136,13 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "BL_client_data",
+						"referenceName": "DS_customer_data_csv",
 						"type": "DatasetReference"
 					}
 				],
 				"outputs": [
 					{
-						"referenceName": "BL_consolidated_data_customers",
+						"referenceName": "DS_consolidated_customers_csv",
 						"type": "DatasetReference"
 					}
 				]

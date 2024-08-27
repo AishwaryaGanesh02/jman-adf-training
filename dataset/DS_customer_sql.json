@@ -10,7 +10,7 @@
 		"schema": [],
 		"typeProperties": {
 			"schema": "raw",
-			"table": "customers"
+			"table": "customer_data"
 		}
 	},
 	"type": "Microsoft.DataFactory/factories/datasets"
