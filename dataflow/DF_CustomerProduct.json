@@ -1,0 +1,129 @@
+{
+	"name": "DF_CustomerProduct",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "DS_dim_customer_sql",
+						"type": "DatasetReference"
+					},
+					"name": "customerDimension",
+					"description": "Get customer dimension table"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_fact_sql",
+						"type": "DatasetReference"
+					},
+					"name": "factTable",
+					"description": "Get fact table"
+				},
+				{
+					"dataset": {
+						"referenceName": "DS_dim_order_sql",
+						"type": "DatasetReference"
+					},
+					"name": "orderDimension",
+					"description": "Get order dimension table"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "customerProducts",
+					"description": "Store result in DB"
+				}
+			],
+			"transformations": [
+				{
+					"name": "joinFactCustomer",
+					"description": "Join on Customer ID"
+				},
+				{
+					"name": "joinFactCustomerOrder",
+					"description": "Join based on order ID"
+				},
+				{
+					"name": "productsByCustomer",
+					"description": "Get the products ordered by customer"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          CustomerID as string,",
+				"          FirstName as string,",
+				"          LastName as string,",
+				"          Email as string,",
+				"          City as string,",
+				"          State as string,",
+				"          Country as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> customerDimension",
+				"source(output(",
+				"          OrderID as integer,",
+				"          CustomerID as string,",
+				"          ProductID as string,",
+				"          ProductName as string,",
+				"          {Unit Price} as double",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> factTable",
+				"source(output(",
+				"          OrderID as integer,",
+				"          ProductID as string,",
+				"          Quantity as integer,",
+				"          Price as double,",
+				"          CustomerID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     isolationLevel: 'READ_UNCOMMITTED',",
+				"     format: 'table') ~> orderDimension",
+				"factTable, customerDimension join(factTable@CustomerID == customerDimension@CustomerID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinFactCustomer",
+				"joinFactCustomer, orderDimension join(factTable@OrderID == orderDimension@OrderID,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinFactCustomerOrder",
+				"joinFactCustomerOrder select(mapColumn(",
+				"          ProductName,",
+				"          {Unit Price},",
+				"          Email,",
+				"          City,",
+				"          Country,",
+				"          Quantity,",
+				"          Price",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> productsByCustomer",
+				"productsByCustomer sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'dbo',",
+				"     tableName: 'CustomerProduct',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> customerProducts"
+			]
+		}
+	}
+}

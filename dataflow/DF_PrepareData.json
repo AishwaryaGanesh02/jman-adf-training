@@ -1,5 +1,5 @@
 {
-	"name": "DF_prepare_data",
+	"name": "DF_PrepareData",
 	"properties": {
 		"type": "MappingDataFlow",
 		"typeProperties": {
