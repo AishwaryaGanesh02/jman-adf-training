@@ -1,0 +1,1282 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-adftraining-jman"
+		},
+		"LS_blobstorage_training_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_blobstorage_training'"
+		},
+		"LS_sql_db_training_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LS_sql_db_training'"
+		},
+		"LS_sql_db_training_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "sql-server-adftraining.database.windows.net"
+		},
+		"LS_sql_db_training_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "sqldb-adftraining"
+		},
+		"LS_sql_db_training_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "aishwarya"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_blobstorage_training')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_blobstorage_training_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_sql_db_training')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('LS_sql_db_training_properties_typeProperties_server')]",
+					"database": "[parameters('LS_sql_db_training_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_sql_db_training_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('LS_sql_db_training_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_consolidated_customers_csv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_blobstorage_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "customer_consolidated.csv",
+						"folderPath": "customer",
+						"container": "consolidated-folder"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_blobstorage_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_consolidated_orders_csv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_blobstorage_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "orders_consolidated.csv",
+						"folderPath": "order",
+						"container": "consolidated-folder"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_blobstorage_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_customer_data')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_blobstorage_training",
+					"type": "LinkedServiceReference"
+				},
+				"folder": {
+					"name": "AdfAssessment"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "input"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Email",
+						"type": "String"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "String"
+					},
+					{
+						"name": "Address",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "ZipCode",
+						"type": "String"
+					},
+					{
+						"name": "Country",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_blobstorage_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_customer_data_csv')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_blobstorage_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "input"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CustomerID",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Email",
+						"type": "String"
+					},
+					{
+						"name": "PhoneNumber",
+						"type": "String"
+					},
+					{
+						"name": "Address",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "ZipCode",
+						"type": "String"
+					},
+					{
+						"name": "Country",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_blobstorage_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_customer_sql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "raw",
+					"table": "customer_data"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_dim_customer_sql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "prep",
+					"table": "customer_dimension"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_dim_order_sql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "prep",
+					"table": "order_dimension"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_fact_sql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "prep",
+					"table": "fact"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_modified_orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "raw",
+					"table": "modifiedorders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_orders_data_xlsx')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_blobstorage_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Excel",
+				"typeProperties": {
+					"sheetName": "Sheet1",
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "input"
+					},
+					"firstRowAsHeader": true
+				},
+				"schema": [
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					},
+					{
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_blobstorage_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_orders_sql')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "raw",
+					"table": "order_data"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_orders_total_price')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_sql_db_training",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "modified",
+					"table": "orders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_AdfTraining_CopyData_Merge')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy customer data",
+						"description": "Copy data and merge",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*customerdetails.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "MergeFiles"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_customer_data_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_consolidated_customers_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy order data",
+						"description": "Copy data and merge",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "ExcelSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*orderdetails.xlsx",
+									"enablePartitionDiscovery": false
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "MergeFiles"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_orders_data_xlsx",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_consolidated_orders_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "AdfTraining"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-08-27T01:46:52Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_customer_data_csv')]",
+				"[concat(variables('factoryId'), '/datasets/DS_consolidated_customers_csv')]",
+				"[concat(variables('factoryId'), '/datasets/DS_orders_data_xlsx')]",
+				"[concat(variables('factoryId'), '/datasets/DS_consolidated_orders_csv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Adftraing_StoreData')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Store customer data",
+						"description": "Store the consolidated data in SQL DB",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "drop table if exists raw.customer_data",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_consolidated_customers_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_customer_sql",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Store order data",
+						"description": "Store the consolidated data in SQL DB",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "drop table if exists raw.order_data",
+								"writeBehavior": "insert",
+								"sqlWriterUseTableLock": false,
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_consolidated_orders_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_orders_sql",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "AdfTraining"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-08-27T01:46:52Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_consolidated_customers_csv')]",
+				"[concat(variables('factoryId'), '/datasets/DS_customer_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_consolidated_orders_csv')]",
+				"[concat(variables('factoryId'), '/datasets/DS_orders_sql')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Training_Usemetadata_filter')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get all file names",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "DS_customer_data_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "DelimitedTextReadSettings"
+							}
+						}
+					},
+					{
+						"name": "Get customer files",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get all file names",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get all file names').output.childItems",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@contains(item().name,'customerdetails')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Get order files",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "Get all file names",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get all file names').output.childItems",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@contains(item().name,'orderdetails')",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Copy customer data",
+						"type": "Copy",
+						"state": "Inactive",
+						"onInactiveMarkAs": "Succeeded",
+						"dependsOn": [
+							{
+								"activity": "Get customer files",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*.csv",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings",
+									"copyBehavior": "MergeFiles"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".csv"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_customer_data_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_consolidated_customers_csv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "AdfTraining"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-08-27T08:30:13Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_customer_data_csv')]",
+				"[concat(variables('factoryId'), '/datasets/DS_consolidated_customers_csv')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_CalculateTotal')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_orders_sql",
+								"type": "DatasetReference"
+							},
+							"name": "ordersData",
+							"description": "Get the source dataset of orders"
+						}
+					],
+					"sinks": [
+						{
+							"linkedService": {
+								"referenceName": "LS_sql_db_training",
+								"type": "LinkedServiceReference"
+							},
+							"name": "storeData",
+							"description": "Storing the data in database"
+						}
+					],
+					"transformations": [
+						{
+							"name": "createUnitPrice",
+							"description": "Adding column - unit price"
+						},
+						{
+							"name": "createTotalPrice",
+							"description": "Creating total price value"
+						},
+						{
+							"name": "cast1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          OrderID as string,",
+						"          ProductID as string,",
+						"          ProductName as string,",
+						"          Quantity as string,",
+						"          OrderTimestamp as string,",
+						"          Price as string,",
+						"          CustomerID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> ordersData",
+						"cast1 derive({Unit Price} = Price/Quantity) ~> createUnitPrice",
+						"createUnitPrice derive(TotalPrice = Quantity*{Unit Price}) ~> createTotalPrice",
+						"ordersData cast(output(",
+						"          Quantity as integer,",
+						"          Price as double",
+						"     ),",
+						"     errors: true) ~> cast1",
+						"createTotalPrice sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     format: 'table',",
+						"     store: 'sqlserver',",
+						"     schemaName: 'dbo',",
+						"     tableName: 'orders',",
+						"     insertable: true,",
+						"     updateable: false,",
+						"     deletable: false,",
+						"     upsertable: false,",
+						"     recreate: true,",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     saveOrder: 1,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> storeData"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_orders_sql')]",
+				"[concat(variables('factoryId'), '/linkedServices/LS_sql_db_training')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_prepare_data')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_customer_sql",
+								"type": "DatasetReference"
+							},
+							"name": "customerData",
+							"description": "Get customer data from DB"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_orders_sql",
+								"type": "DatasetReference"
+							},
+							"name": "orderData",
+							"description": "Get order data from DB"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "DS_dim_customer_sql",
+								"type": "DatasetReference"
+							},
+							"name": "storeCustomerDim",
+							"description": "Store dim table in DB"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_dim_order_sql",
+								"type": "DatasetReference"
+							},
+							"name": "storeOrderDim",
+							"description": "Store dim table in DB"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_fact_sql",
+								"type": "DatasetReference"
+							},
+							"name": "storeFactTable",
+							"description": "Store fact in DB"
+						}
+					],
+					"transformations": [
+						{
+							"name": "cleanCustomerData",
+							"description": "Remove Null values"
+						},
+						{
+							"name": "customerDimData",
+							"description": "Creating dimension table"
+						},
+						{
+							"name": "removeCustomerDuplicates",
+							"description": "Remove duplicate values "
+						},
+						{
+							"name": "findDuplicatesCustomer",
+							"description": "Sort based on ID and find rank"
+						},
+						{
+							"name": "castDataType",
+							"description": "Cast columns to different types"
+						},
+						{
+							"name": "cleanOrderData",
+							"description": "Remove NULL value\n"
+						},
+						{
+							"name": "findDuplicatesOrder",
+							"description": "Sort based on ID and find rank"
+						},
+						{
+							"name": "removeOrderDuplicates",
+							"description": "Remove duplicate values "
+						},
+						{
+							"name": "orderDimData",
+							"description": "Creating dimension table"
+						},
+						{
+							"name": "createUnitPrice",
+							"description": "Calculate unit price from price and quantity"
+						},
+						{
+							"name": "factData",
+							"description": "Creating Fact table"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          CustomerID as string,",
+						"          FirstName as string,",
+						"          LastName as string,",
+						"          Email as string,",
+						"          PhoneNumber as string,",
+						"          Address as string,",
+						"          City as string,",
+						"          State as string,",
+						"          ZipCode as string,",
+						"          Country as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> customerData",
+						"source(output(",
+						"          OrderID as string,",
+						"          ProductID as string,",
+						"          ProductName as string,",
+						"          Quantity as string,",
+						"          OrderTimestamp as string,",
+						"          Price as string,",
+						"          CustomerID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> orderData",
+						"customerData derive(LastName = iif(LastName=='NULL', ' ', iifNull(LastName, ' ')),",
+						"          Email = iif(Email=='NULL', 'example@email.com', iifNull(Email, 'example@email.com')),",
+						"          PhoneNumber = iif(PhoneNumber=='NULL', '999-9999', iifNull(PhoneNumber, '999-9999')),",
+						"          Address = iif(Address=='NULL', 'Unknown', iifNull(Address, 'Unknown')),",
+						"          City = iif(City=='NULL', 'Unknown', iifNull(City, 'Unknown')),",
+						"          State = iif(State=='NULL', 'Unknown', iifNull(State, 'Unknown')),",
+						"          ZipCode = iif(ZipCode=='NULL', 'Unknown', iifNull(ZipCode, 'Unknown')),",
+						"          Country = iif(Country=='NULL', 'Unknown', iifNull(Country, 'Unknown'))) ~> cleanCustomerData",
+						"removeCustomerDuplicates select(mapColumn(",
+						"          CustomerID,",
+						"          FirstName,",
+						"          LastName,",
+						"          Email,",
+						"          City,",
+						"          State,",
+						"          Country",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> customerDimData",
+						"findDuplicatesCustomer filter(Rank==1) ~> removeCustomerDuplicates",
+						"cleanCustomerData window(over(CustomerID),",
+						"     asc(CustomerID, true),",
+						"     Rank = rowNumber()) ~> findDuplicatesCustomer",
+						"orderData cast(output(",
+						"          OrderID as integer,",
+						"          Quantity as integer,",
+						"          OrderTimestamp as timestamp,",
+						"          Price as double",
+						"     ),",
+						"     errors: true) ~> castDataType",
+						"removeOrderDuplicates derive(OrderTimestamp = iifNull(OrderTimestamp, toTimestamp('9999-01-01 00:12:00'))) ~> cleanOrderData",
+						"castDataType window(over(OrderID),",
+						"     asc(OrderID, true),",
+						"     Rank = rowNumber()) ~> findDuplicatesOrder",
+						"findDuplicatesOrder filter(Rank==1) ~> removeOrderDuplicates",
+						"cleanOrderData select(mapColumn(",
+						"          OrderID,",
+						"          ProductID,",
+						"          Quantity,",
+						"          Price,",
+						"          CustomerID",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> orderDimData",
+						"cleanOrderData derive({Unit Price} = Price/Quantity) ~> createUnitPrice",
+						"createUnitPrice select(mapColumn(",
+						"          OrderID,",
+						"          CustomerID,",
+						"          ProductID,",
+						"          ProductName,",
+						"          {Unit Price}",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> factData",
+						"customerDimData sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     saveOrder: 0,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          CustomerID,",
+						"          FirstName,",
+						"          LastName,",
+						"          Email,",
+						"          City,",
+						"          State,",
+						"          Country",
+						"     )) ~> storeCustomerDim",
+						"orderDimData sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> storeOrderDim",
+						"factData sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError') ~> storeFactTable"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_customer_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_orders_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_dim_customer_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_dim_order_sql')]",
+				"[concat(variables('factoryId'), '/datasets/DS_fact_sql')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Dataflow_Training')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_CalculateTotal",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"ordersData": {},
+									"storeData": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"folder": {
+					"name": "AdfTraining"
+				},
+				"annotations": [],
+				"lastPublishTime": "2024-08-27T07:42:09Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF_CalculateTotal')]"
+			]
+		}
+	]
+}
