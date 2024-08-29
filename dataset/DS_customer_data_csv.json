@@ -5,6 +5,9 @@
 			"referenceName": "LS_blobstorage_training",
 			"type": "LinkedServiceReference"
 		},
+		"folder": {
+			"name": "AdfTrainingAssessment"
+		},
 		"annotations": [],
 		"type": "DelimitedText",
 		"typeProperties": {
