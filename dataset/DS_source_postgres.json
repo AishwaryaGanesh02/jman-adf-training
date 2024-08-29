@@ -1,0 +1,27 @@
+{
+	"name": "DS_source_postgres",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_postgres_training",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"TableName": {
+				"type": "string"
+			}
+		},
+		"folder": {
+			"name": "AdfMiniProject"
+		},
+		"annotations": [],
+		"type": "PostgreSqlV2Table",
+		"schema": [],
+		"typeProperties": {
+			"schema": "public",
+			"table": {
+				"value": "@dataset().TableName",
+				"type": "Expression"
+			}
+		}
+	}
+}
