@@ -1,0 +1,21 @@
+{
+	"name": "LS_sql_db_integratedRuntime",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "sql-server-adftraining.database.windows.net",
+			"database": "sqldb-adftraining",
+			"encrypt": "mandatory",
+			"trustServerCertificate": false,
+			"authenticationType": "SQL",
+			"userName": "aishwarya",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiIwMTY2ZDdhOS1mZmMwLTQxZTQtYTdkMy0wNzNiODI3ODMxMzUiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "integrationRuntime1",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
