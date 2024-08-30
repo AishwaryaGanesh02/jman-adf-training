@@ -24,20 +24,83 @@
 					"description": "Import product data"
 				}
 			],
-			"sinks": [],
+			"sinks": [
+				{
+					"name": "storeAvgTimeCategory"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeDeptTime"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeBrandTime"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeTopBrand"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeTopCategory"
+				}
+			],
 			"transformations": [
 				{
 					"name": "joinCategoriesProducts",
 					"description": "Join categories and products"
 				},
 				{
-					"name": "aggregate1"
+					"name": "topBrandsByProducts",
+					"description": "Group by brand name - count of products"
 				},
 				{
-					"name": "sort1"
+					"name": "sortTopBrands",
+					"description": "Sorting rows descending"
 				},
 				{
-					"name": "aggregate2"
+					"name": "topCategoryByBrands",
+					"description": "Group by category - count of brands"
+				},
+				{
+					"name": "sortTopCategory",
+					"description": "Sorting rows descending"
+				},
+				{
+					"name": "averageDeliveryTimeByBrands",
+					"description": "Average Delivery Time by Brands"
+				},
+				{
+					"name": "sortAverageDeliveryTime",
+					"description": "Sort rows descending"
+				},
+				{
+					"name": "averageDeliveryTimeDepartments",
+					"description": "Average delivery time by department"
+				},
+				{
+					"name": "sortAverageTimeDepartment",
+					"description": "Sort rows descending"
+				},
+				{
+					"name": "averageDeliveryTimeCategory",
+					"description": "Average delivery time by category"
+				},
+				{
+					"name": "sortAverageTimeCategory",
+					"description": "Sort rows descending"
 				}
 			],
 			"scriptLines": [
@@ -82,9 +145,80 @@
 				"     ignoreSpaces: false,",
 				"     broadcast: 'auto')~> joinCategoriesProducts",
 				"joinCategoriesProducts aggregate(groupBy(brand_name),",
-				"     series_name = count(series_name)) ~> aggregate1",
-				"aggregate1 sort(desc(series_name, true)) ~> sort1",
-				"joinCategoriesProducts aggregate() ~> aggregate2"
+				"     series_code = count(series_code)) ~> topBrandsByProducts",
+				"topBrandsByProducts sort(desc(series_code, true)) ~> sortTopBrands",
+				"joinCategoriesProducts aggregate(groupBy(subcategory),",
+				"     brand_code = count(brand_code)) ~> topCategoryByBrands",
+				"topCategoryByBrands sort(desc(brand_code, true)) ~> sortTopCategory",
+				"joinCategoriesProducts aggregate(groupBy(brand_name),",
+				"     max_standard_days_to_ship = avg(max_standard_days_to_ship),",
+				"          min_standard_days_to_ship = avg(min_standard_days_to_ship)) ~> averageDeliveryTimeByBrands",
+				"averageDeliveryTimeByBrands sort(desc(max_standard_days_to_ship, true)) ~> sortAverageDeliveryTime",
+				"joinCategoriesProducts aggregate(groupBy(department_code),",
+				"     min_standard_days_to_ship = avg(min_standard_days_to_ship)) ~> averageDeliveryTimeDepartments",
+				"averageDeliveryTimeDepartments sort(desc(min_standard_days_to_ship, true)) ~> sortAverageTimeDepartment",
+				"joinCategoriesProducts aggregate(groupBy(subcategory),",
+				"     min_standard_days_to_ship = avg(min_standard_days_to_ship)) ~> averageDeliveryTimeCategory",
+				"averageDeliveryTimeCategory sort(desc(min_standard_days_to_ship, true)) ~> sortAverageTimeCategory",
+				"sortAverageTimeCategory sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> storeAvgTimeCategory",
+				"sortAverageTimeDepartment sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'avg_time_dept',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeDeptTime",
+				"sortAverageDeliveryTime sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'avg_time_brand',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeBrandTime",
+				"sortTopBrands sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'top_brand',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeTopBrand",
+				"sortTopCategory sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'top_category',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeTopCategory"
 			]
 		}
 	}
