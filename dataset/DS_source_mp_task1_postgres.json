@@ -1,5 +1,5 @@
 {
-	"name": "DS_source_postgres",
+	"name": "DS_source_mp_task1_postgres",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "LS_postgres_training",

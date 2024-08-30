@@ -80,7 +80,7 @@
 							},
 							"inputs": [
 								{
-									"referenceName": "DS_source_postgres",
+									"referenceName": "DS_source_mp_task1_postgres",
 									"type": "DatasetReference",
 									"parameters": {
 										"TableName": {
@@ -92,7 +92,7 @@
 							],
 							"outputs": [
 								{
-									"referenceName": "DS_sink_sql",
+									"referenceName": "DS_sink_mp_task1_sql",
 									"type": "DatasetReference",
 									"parameters": {
 										"TableName": {
@@ -109,7 +109,7 @@
 			}
 		],
 		"folder": {
-			"name": "AdfMiniProject"
+			"name": "AdfMiniProject/Task1"
 		},
 		"annotations": []
 	}
