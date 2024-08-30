@@ -26,6 +26,10 @@
 			],
 			"sinks": [
 				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
 					"name": "storeAvgTimeCategory"
 				},
 				{
@@ -162,8 +166,18 @@
 				"averageDeliveryTimeCategory sort(desc(min_standard_days_to_ship, true)) ~> sortAverageTimeCategory",
 				"sortAverageTimeCategory sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'avg_time_category',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> storeAvgTimeCategory",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeAvgTimeCategory",
 				"sortAverageTimeDepartment sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
