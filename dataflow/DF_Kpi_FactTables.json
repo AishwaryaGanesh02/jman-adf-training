@@ -27,29 +27,64 @@
 			"sinks": [],
 			"transformations": [
 				{
-					"name": "joinCategoriesProducts"
+					"name": "joinCategoriesProducts",
+					"description": "Join categories and products"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "sort1"
+				},
+				{
+					"name": "aggregate2"
 				}
 			],
 			"scriptLines": [
-				"source(allowSchemaDrift: true,",
+				"source(output(",
+				"          product_category as string,",
+				"          category as string,",
+				"          subcategory as string,",
+				"          category_code as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
 				"     store: 'sqlserver',",
 				"     schemaName: 'prep',",
-				"     tableName: 'categories',",
+				"     tableName: 'catogories',",
 				"     isolationLevel: 'READ_UNCOMMITTED') ~> getCatogories",
-				"source(allowSchemaDrift: true,",
+				"source(output(",
+				"          department_code as string,",
+				"          category_code as string,",
+				"          category_name as string,",
+				"          series_code as long,",
+				"          series_name as string,",
+				"          brand_code as string,",
+				"          brand_name as string,",
+				"          min_standard_days_to_ship as integer,",
+				"          max_standard_days_to_ship as integer,",
+				"          min_standard_unit_price as double,",
+				"          max_standard_unit_price as double,",
+				"          min_price_per_piece as double,",
+				"          max_price_per_piece as double",
+				"     ),",
+				"     allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     format: 'table',",
 				"     store: 'sqlserver',",
 				"     schemaName: 'prep',",
 				"     tableName: 'products',",
 				"     isolationLevel: 'READ_UNCOMMITTED') ~> getProducts",
-				"getCatogories, getProducts join(ERROR_FUNCTION('') == ERROR_FUNCTION(''),",
+				"getCatogories, getProducts join(getCatogories@category_code == getProducts@category_code,",
 				"     joinType:'right',",
 				"     matchType:'exact',",
 				"     ignoreSpaces: false,",
-				"     broadcast: 'auto')~> joinCategoriesProducts"
+				"     broadcast: 'auto')~> joinCategoriesProducts",
+				"joinCategoriesProducts aggregate(groupBy(brand_name),",
+				"     series_name = count(series_name)) ~> aggregate1",
+				"aggregate1 sort(desc(series_name, true)) ~> sort1",
+				"joinCategoriesProducts aggregate() ~> aggregate2"
 			]
 		}
 	}
