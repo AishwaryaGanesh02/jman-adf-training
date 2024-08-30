@@ -1,0 +1,188 @@
+{
+	"name": "DF_UserSkillsFact",
+	"properties": {
+		"folder": {
+			"name": "AdfMiniProject"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "usersSkills",
+					"description": "Import user skills data from DB"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "user",
+					"description": "Import user data from DB"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "skills",
+					"description": "Import skills data from DB"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "designation",
+					"description": "Import designation from DB"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeUserSkillFact",
+					"description": "Store user skill fact table"
+				}
+			],
+			"transformations": [
+				{
+					"name": "joinUserAndSkills",
+					"description": "Join user's skills with user"
+				},
+				{
+					"name": "userRequiredCols",
+					"description": "Selecting only the required rows"
+				},
+				{
+					"name": "filterEmployees",
+					"description": "Filter out all the employees"
+				},
+				{
+					"name": "joinSkills",
+					"description": "Join user's skill with skill details"
+				},
+				{
+					"name": "userSkillsFact",
+					"description": "Selecting only the required rows"
+				},
+				{
+					"name": "joinDesignation",
+					"description": "Join users with designation"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id as integer,",
+				"          userid as integer,",
+				"          skillid as integer,",
+				"          createdAt as timestamp,",
+				"          updatedAt as timestamp,",
+				"          level as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'UserSkill',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> usersSkills",
+				"source(output(",
+				"          id as integer,",
+				"          name as string,",
+				"          email as string,",
+				"          role as string,",
+				"          degnid as integer,",
+				"          password as string,",
+				"          gender as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'User',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> user",
+				"source(output(",
+				"          id as integer,",
+				"          name as string,",
+				"          desc as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'Skill',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> skills",
+				"source(output(",
+				"          id as integer,",
+				"          name as string,",
+				"          deptid as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'Designation',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> designation",
+				"usersSkills, userRequiredCols join(userid == userRequiredCols@id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinUserAndSkills",
+				"filterEmployees select(mapColumn(",
+				"          id,",
+				"          name,",
+				"          degnid,",
+				"          gender",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> userRequiredCols",
+				"user filter(role=='employee') ~> filterEmployees",
+				"joinUserAndSkills, skills join(skillid == skills@id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinSkills",
+				"joinDesignation select(mapColumn(",
+				"          createdAt,",
+				"          updatedAt,",
+				"          level,",
+				"          userName = userRequiredCols@name,",
+				"          gender,",
+				"          skill = skills@name,",
+				"          description = desc,",
+				"          designationName = designation@name",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> userSkillsFact",
+				"joinSkills, designation join(degnid == designation@id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinDesignation",
+				"userSkillsFact sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'user_skill_fact',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeUserSkillFact"
+			]
+		}
+	}
+}

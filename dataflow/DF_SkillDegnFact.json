@@ -1,0 +1,132 @@
+{
+	"name": "DF_SkillDegnFact",
+	"properties": {
+		"folder": {
+			"name": "AdfMiniProject"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "designationSkills",
+					"description": "Import designation skills from DB"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "skills",
+					"description": "Import skills from DB"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "designation",
+					"description": "Import designation from DB"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeSkillDesignationFact",
+					"description": "Store skill designation fact table in DB"
+				}
+			],
+			"transformations": [
+				{
+					"name": "joinSkills",
+					"description": "Join skills table"
+				},
+				{
+					"name": "joinDesignation",
+					"description": "Join designation table"
+				},
+				{
+					"name": "selectRequiredData",
+					"description": "Selecting required info from the join"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          id as integer,",
+				"          degnid as integer,",
+				"          skillId as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'DesignationSkill',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> designationSkills",
+				"source(output(",
+				"          id as integer,",
+				"          name as string,",
+				"          desc as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'Skill',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> skills",
+				"source(output(",
+				"          id as integer,",
+				"          name as string,",
+				"          deptid as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp',",
+				"     tableName: 'Designation',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> designation",
+				"designationSkills, skills join(skillId == skills@id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinSkills",
+				"joinSkills, designation join(degnid == designation@id,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinDesignation",
+				"joinDesignation select(mapColumn(",
+				"          degnid,",
+				"          skillId,",
+				"          skillName = skills@name,",
+				"          desc,",
+				"          designationName = designation@name",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> selectRequiredData",
+				"selectRequiredData sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'mp_result',",
+				"     tableName: 'skill_degn_fact',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     truncate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeSkillDesignationFact"
+			]
+		}
+	}
+}
