@@ -13,6 +13,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
+				"fileName": "product_information.csv",
 				"container": "mp-task2-input-container"
 			},
 			"columnDelimiter": ",",

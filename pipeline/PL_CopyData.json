@@ -5,6 +5,8 @@
 			{
 				"name": "Copy category data from blob to SQL",
 				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [],
 				"policy": {
 					"timeout": "0.12:00:00",
@@ -29,7 +31,7 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"preCopyScript": "drop table raw.categories",
+						"preCopyScript": "drop table if exists raw.categories",
 						"writeBehavior": "insert",
 						"sqlWriterUseTableLock": false,
 						"tableOption": "autoCreate",
@@ -80,7 +82,6 @@
 						"storeSettings": {
 							"type": "AzureBlobStorageReadSettings",
 							"recursive": true,
-							"wildcardFileName": "product_info.csv",
 							"enablePartitionDiscovery": false
 						},
 						"formatSettings": {
@@ -89,7 +90,7 @@
 					},
 					"sink": {
 						"type": "AzureSqlSink",
-						"preCopyScript": "drop table raw.products",
+						"preCopyScript": "drop table if exists raw.products",
 						"writeBehavior": "insert",
 						"sqlWriterUseTableLock": false,
 						"tableOption": "autoCreate",
