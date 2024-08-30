@@ -34,6 +34,10 @@
 					"description": "Store cleaned data in DB"
 				},
 				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
 					"name": "storeProductData",
 					"description": "Store cleaned data in DB"
 				}
@@ -139,14 +143,24 @@
 				"     updateable: false,",
 				"     deletable: false,",
 				"     upsertable: false,",
-				"     truncate: true,",
+				"     recreate: true,",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
 				"     errorHandlingOption: 'stopOnFirstError') ~> storeCatogoryData",
 				"selectRequiredCols sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'prep',",
+				"     tableName: 'products',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     recreate: true,",
 				"     skipDuplicateMapInputs: true,",
-				"     skipDuplicateMapOutputs: true) ~> storeProductData"
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeProductData"
 			]
 		}
 	}

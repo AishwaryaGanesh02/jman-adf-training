@@ -1,0 +1,56 @@
+{
+	"name": "DF_Kpi_FactTables",
+	"properties": {
+		"folder": {
+			"name": "AdfMiniProject"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "getCatogories",
+					"description": "Import category data"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "getProducts",
+					"description": "Import product data"
+				}
+			],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "joinCategoriesProducts"
+				}
+			],
+			"scriptLines": [
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'prep',",
+				"     tableName: 'categories',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> getCatogories",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'prep',",
+				"     tableName: 'products',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> getProducts",
+				"getCatogories, getProducts join(ERROR_FUNCTION('') == ERROR_FUNCTION(''),",
+				"     joinType:'right',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinCategoriesProducts"
+			]
+		}
+	}
+}
