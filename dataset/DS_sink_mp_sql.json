@@ -1,5 +1,5 @@
 {
-	"name": "DS_sink_mp_task1_sql",
+	"name": "DS_sink_mp_sql",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "LS_sql_db_training",

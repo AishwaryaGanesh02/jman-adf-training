@@ -1,0 +1,97 @@
+{
+	"name": "DF_PrepareData_Task2",
+	"properties": {
+		"folder": {
+			"name": "AdfMiniProject"
+		},
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "getCategories",
+					"description": "Import category data from SQL"
+				},
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "getProducts",
+					"description": "Import product data from SQL"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "LS_sql_db_training",
+						"type": "LinkedServiceReference"
+					},
+					"name": "storeCatogoryData",
+					"description": "Store cleaned data in DB"
+				},
+				{
+					"name": "storeProductData",
+					"description": "Store cleaned data in DB"
+				}
+			],
+			"transformations": [
+				{
+					"name": "removeNullValues",
+					"description": "Removing NULL values"
+				},
+				{
+					"name": "findDuplicateCategory",
+					"description": "Sort based on category code and find rank"
+				},
+				{
+					"name": "removeDuplicateCatogories",
+					"description": "Remove duplicate values"
+				}
+			],
+			"scriptLines": [
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'raw',",
+				"     tableName: 'categories',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> getCategories",
+				"source(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'raw',",
+				"     tableName: 'products',",
+				"     isolationLevel: 'READ_UNCOMMITTED') ~> getProducts",
+				"getProducts derive(min_price_per_piece = iifNull(min_price_per_piece, 0.0),",
+				"          max_price_per_piece = iifNull(max_price_per_piece, 0.0),",
+				"          min_standard_unit_piece = iifNull(min_standard_unit_piece, 0.0),",
+				"          max_standard_unit_piece = iifNull(max_standard_unit_piece, 0.0)) ~> removeNullValues",
+				"getCategories window() ~> findDuplicateCategory",
+				"findDuplicateCategory filter(Rank == 1) ~> removeDuplicateCatogories",
+				"removeDuplicateCatogories sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table',",
+				"     store: 'sqlserver',",
+				"     schemaName: 'prep',",
+				"     tableName: 'catogories',",
+				"     insertable: true,",
+				"     updateable: false,",
+				"     deletable: false,",
+				"     upsertable: false,",
+				"     truncate: true,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     errorHandlingOption: 'stopOnFirstError') ~> storeCatogoryData",
+				"removeNullValues sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> storeProductData"
+			]
+		}
+	}
+}
